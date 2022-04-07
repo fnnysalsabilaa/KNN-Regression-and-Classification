@@ -1,0 +1,88 @@
+---
+title: "Introduction Machine Learning"
+output: html_notebook
+---
+
+Pada R Notebook ini kita akan melakukan permodelan Machine Learning dengan metode K-NN baik itu untuk kasus regresi maupun klasifikasi. Adapun beberapa library yang perlu di Install dan Load sebagai berikut.
+
+```{r}
+install.packages("caret")
+install.packages("MLmetrics")
+```
+
+```{r}
+library(MASS)
+library(MLmetrics)
+library(caret)
+```
+
+Pada kasus klasifikasi kali ini kita menggunakan data titanic dengan rincian variabel sebagai berikut
+
+
+- survival :	Survival	0 = No, 1 = Yes
+- pclass :	Ticket class	1 = 1st, 2 = 2nd, 3 = 3rd
+- sex :	Sex	
+- Age :	Age in years	
+- sibsp :	# of siblings / spouses aboard the Titanic	
+- parch :	# of parents / children aboard the Titanic	
+- ticket :	Ticket number	
+- fare :	Passenger fare	
+- cabin :	Cabin number	
+- embarked :	Port of Embarkation
+
+```{r}
+library(readr)
+titanic_data <- read_csv("train.csv")
+head(titanic_data)
+```
+
+Melakukan pemilihan variabel yang nantinya digunakan untuk pemodelan machine learning.
+
+```{r}
+titanic_selected <- titanic_data[,c(2,3,5,6,7,8,12)]
+titanic_selected <- transform(titanic_selected , Survived = as.factor(Survived))
+
+head(titanic_selected)
+```
+
+Meremove baris yang memiliki kasus data missing.
+
+```{r}
+titanic_selected <- na.omit(titanic_selected)
+titanic_selected
+```
+
+Membagi 90% data sebagai training dan 10% sebagai testing
+```{r}
+indexes <- createDataPartition(titanic_selected$Survived, p = .9, list = F)
+train <- titanic_selected[indexes, ]
+test <-titanic_selected[-indexes, ]
+
+
+train_x <- train[, -1]
+
+test_x <- test[, -1]
+test_y <- test[,1]
+
+
+```
+
+Melakukan permodelan KNN Klasifikasi dengan k=5, k dapat disesuaikan
+```{r}
+knnmodel <- knn3(Survived ~.,train,k=5) #selain var survived, dijadikan sbg var prediktor
+
+probs_pred <- predict(knnmodel,test)[,2] #1 dianggap sbg acuan
+y_pred <- replace(probs_pred, probs_pred>0.5, 1) #>0.5 dianggap 1
+y_pred <- replace(y_pred, y_pred<=0.5, 0)
+y_pred <- as.factor(y_pred)
+y_pred
+```
+
+
+Melakukan evaluasi model
+
+```{r}
+confusionMatrix(test_y,y_pred)
+table(titanic_selected$Survived)
+```
+
